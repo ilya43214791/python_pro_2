@@ -1,8 +1,7 @@
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 import requests
 from pydantic import BaseModel, Field
 import json
-from django.conf import settings
 
 API_KEY = "HDKIKI6WAC2J677G"
 BASE_URL = "https://www.alphavantage.co"
@@ -68,26 +67,25 @@ def exchange_rates(request):
     )
 
     headers: dict = {
+        # "Content-Type": "application/json", # if http response is used
         "Access-Control-Allow-Origin": "*",
     }
+    log_exchange_rate(result)
 
-    filename = "history.json"
+    return JsonResponse(data=result.model_dump(), headers=headers)
 
-    with open(settings.BASE_DIR / filename, "r") as file:
-        data = json.load(file)
 
-    # Update the data with the new result
-    data.update({
-        "currency_from": result.results.currency_from,
-        "currency_to": result.results.currency_to,
-        "rate": result.results.rate,
-    })
+def log_exchange_rate(response):
+    with open("history.json", "a", encoding="utf-8") as file:
+        json.dump(response.model_dump(), file)
+        file.write('\n')
 
-    with open(settings.BASE_DIR / filename, "w") as file:
-        file.write(json.dumps(data))
 
-    return JsonResponse({
-        "message": f"Rate {currency_from.upper()} to {currency_to.upper()} is {round(result.results.rate, 2)}",
-        "data": result.model_dump(),
-    }, headers=headers)
+def exchange_rates_history(request):
+    headers: dict = {
+        "Access-Control-Allow-Origin": "*",
+    }
+    with open("history.json", encoding="utf-8") as file:
+        history_data = [json.loads(line) for line in file]
 
+    return JsonResponse(data=history_data, headers=headers)
