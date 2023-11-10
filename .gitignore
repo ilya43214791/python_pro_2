@@ -8,3 +8,6 @@ __pycache__/
 
 # Storages
 *.sqlite3
+
+#historyjson
+.history.json
